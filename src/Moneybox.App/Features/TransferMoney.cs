@@ -6,8 +6,9 @@ namespace Moneybox.App.Features
 {
     public class TransferMoney
     {
-        private IAccountRepository accountRepository;
-        private INotificationService notificationService;
+        //prevent fields being reassigned during runtime
+        private readonly IAccountRepository accountRepository;
+        private readonly INotificationService notificationService;
 
         public TransferMoney(IAccountRepository accountRepository, INotificationService notificationService)
         {
@@ -15,39 +16,53 @@ namespace Moneybox.App.Features
             this.notificationService = notificationService;
         }
 
+          
         public void Execute(Guid fromAccountId, Guid toAccountId, decimal amount)
         {
+            //Assuming account repository will implement logic and throw an exception if no account is found.
             var from = this.accountRepository.GetAccountById(fromAccountId);
             var to = this.accountRepository.GetAccountById(toAccountId);
 
-            var fromBalance = from.Balance - amount;
-            if (fromBalance < 0m)
+            bool lowFundsFlag = false;
+            bool highPaidInLimitFlag = false;
+
+            from.CheckFunds(amount);
+
+            to.CheckPayInLimit(amount);
+
+            if (from.LowFundsAfterTransaction(amount))
             {
-                throw new InvalidOperationException("Insufficient funds to make transfer");
+                lowFundsFlag = true;
             }
 
-            if (fromBalance < 500m)
+            if (to.ApproachingPayInLimit(amount))
             {
-                this.notificationService.NotifyFundsLow(from.User.Email);
+                highPaidInLimitFlag = true;
             }
 
-            var paidIn = to.PaidIn + amount;
-            if (paidIn > Account.PayInLimit)
+            //Here I have reordered the logic to ensure the account repository is update successfully before notify the user of low funds.
+            if(from.Transfer(to, amount))
             {
-                throw new InvalidOperationException("Account pay in limit reached");
+                Update(from, to);
+
+                if (lowFundsFlag)
+                {
+                    this.notificationService.NotifyFundsLow(from.User.Email);
+                }
+
+                if (highPaidInLimitFlag)
+                {
+                    this.notificationService.NotifyApproachingPayInLimit(to.User.Email);
+                }
             }
 
-            if (Account.PayInLimit - paidIn < 500m)
-            {
-                this.notificationService.NotifyApproachingPayInLimit(to.User.Email);
-            }
+            this.accountRepository.Update(from);
+            this.accountRepository.Update(to);
+        }
 
-            from.Balance = from.Balance - amount;
-            from.Withdrawn = from.Withdrawn - amount;
-
-            to.Balance = to.Balance + amount;
-            to.PaidIn = to.PaidIn + amount;
-
+        // Assuming that accountRepository service will implement safety checks for updating
+        private void Update(Account from,Account to)
+        {
             this.accountRepository.Update(from);
             this.accountRepository.Update(to);
         }
