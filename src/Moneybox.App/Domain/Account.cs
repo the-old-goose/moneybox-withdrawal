@@ -19,7 +19,7 @@ namespace Moneybox.App
 
         public decimal PaidIn { get; private set; }
 
-        public void CheckFunds()
+        public void CheckFunds(decimal amount)
         {
             if ((this.Balance - amount) < 0m)
             {

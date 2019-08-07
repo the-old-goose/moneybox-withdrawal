@@ -1,5 +1,6 @@
 ﻿using Moneybox.App.DataAccess;
 using Moneybox.App.Domain.Services;
+using Moneybox.App.Utilities;
 using System;
 
 namespace Moneybox.App.Features
@@ -16,9 +17,12 @@ namespace Moneybox.App.Features
             this.notificationService = notificationService;
         }
 
-          
+        //I would create a base class called Money which acts as a wrapper from amount including currency , conversion rate etc and validate within the money class. 
         public void Execute(Guid fromAccountId, Guid toAccountId, decimal amount)
         {
+            //Ensure Amount is positive before we do anything!
+            Validator.CheckAmountPositive(amount);
+
             //Assuming account repository will implement logic and throw an exception if no account is found.
             var from = this.accountRepository.GetAccountById(fromAccountId);
             var to = this.accountRepository.GetAccountById(toAccountId);
