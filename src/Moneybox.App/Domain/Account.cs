@@ -19,17 +19,28 @@ namespace Moneybox.App
 
         public decimal PaidIn { get; private set; }
 
-        //empty contructor set initial balance to 0
+        //empty contructor set initial properties to zero.
         public Account()
         {
-            this.Balance = 0m;
+            Balance = 0m;
+            PaidIn = 0m;
+            Withdrawn = 0m;
         }
 
-        //Set to predefined initial balance
-        public Account(Decimal initialBalance)
+        public Account(decimal initialBalance)
         {
-            this.Balance = initialBalance;
+            Balance = initialBalance;
+            PaidIn = 0m;
+            Withdrawn = 0m;
         }
+
+        public Account(decimal initialBalance,decimal paidIn,decimal withdrawn)
+        {
+            Balance = initialBalance;
+            PaidIn = paidIn;
+            Withdrawn = withdrawn;
+        }
+
         public void CheckFunds(decimal amount)
         {
             if ((this.Balance - amount) < 0m)

@@ -6,6 +6,8 @@ namespace Moneybox.App.DataAccess
     {
         Account GetAccountById(Guid accountId);
 
-        void Update(Account account);
+        void Update(Account account);// I would remove
+
+        // void Update(params Account[] account); I would add
     }
 }

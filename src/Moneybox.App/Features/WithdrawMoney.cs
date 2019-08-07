@@ -1,4 +1,4 @@
-﻿using Moneybox.App.DataAccess;
+﻿using Moneybox.App.Domain.Helpers;
 using Moneybox.App.Domain.Services;
 using Moneybox.App.Utilities;
 using System;
@@ -7,12 +7,13 @@ namespace Moneybox.App.Features
 {
     public class WithdrawMoney
     {
-        private readonly IAccountRepository accountRepository;
+        //private readonly IAccountRepository accountRepository;
+        private readonly RepositoryHelper repositoryHelper;
         private readonly INotificationService notificationService;
 
-        public WithdrawMoney(IAccountRepository accountRepository, INotificationService notificationService)
+        public WithdrawMoney(RepositoryHelper accountRepository, INotificationService notificationService)
         {
-            this.accountRepository = accountRepository;
+            this.repositoryHelper = accountRepository;
             this.notificationService = notificationService;
         }
 
@@ -20,8 +21,8 @@ namespace Moneybox.App.Features
         {
             Validator.CheckAmountPositive(amount);
 
-            //As the type is obvious and assuming the correct checks are implemented in 'accountRepository', declaring 'from' as a var is fine. 
-            var from = this.accountRepository.GetAccountById(fromAccountId);
+            //As the type is obvious and assuming the correct checks are implemented in 'accountRepository.GetAccountById', declaring an explicit is not required. 
+            var from = this.repositoryHelper.GetAccountById(fromAccountId);
         
             bool lowFundsFlag=false;
             
@@ -37,19 +38,13 @@ namespace Moneybox.App.Features
             //The same logic is followed with TransferMoney
             if(from.Withdraw(amount))
             {
-                Update();
+                this.repositoryHelper.Update(from);
 
-                if(lowFundsFlag)
+                if (lowFundsFlag)
                 {
                     this.notificationService.NotifyFundsLow(from.User.Email);
                 }
             }
-        }
-
-        private void Update(params Account[] accounts)
-        {
-            foreach(Account account in accounts )
-                this.accountRepository.Update(account);
         }
     }
 }

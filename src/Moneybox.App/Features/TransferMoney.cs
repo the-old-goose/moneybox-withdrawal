@@ -1,4 +1,4 @@
-﻿using Moneybox.App.DataAccess;
+﻿using Moneybox.App.Domain.Helpers;
 using Moneybox.App.Domain.Services;
 using Moneybox.App.Utilities;
 using System;
@@ -8,27 +8,26 @@ namespace Moneybox.App.Features
     public class TransferMoney
     {
         //prevent fields being reassigned during runtime
-        private readonly IAccountRepository accountRepository;
         private readonly INotificationService notificationService;
+        private readonly RepositoryHelper repositoryHelper;
 
-        public TransferMoney(IAccountRepository accountRepository, INotificationService notificationService)
+        public TransferMoney(RepositoryHelper repositoryHelper, INotificationService notificationService)
         {
-            this.accountRepository = accountRepository;
+            this.repositoryHelper = repositoryHelper;
             this.notificationService = notificationService;
         }
 
-        //I would create a base class called Money which acts as a wrapper from amount including currency , conversion rate etc and validate within the money class. 
+        //I would create a base class, (perhaps a struct) called 'Money' which acts as a wrapper for 'decimal amount' with properties currency , conversion rate etc and carry out validate within the 'Money' class. 
         public void Execute(Guid fromAccountId, Guid toAccountId, decimal amount)
         {
             //Ensure Amount is positive before we do anything!
             Validator.CheckAmountPositive(amount);
 
             //Assuming account repository will implement logic and throw an exception if no account is found.
-            var from = this.accountRepository.GetAccountById(fromAccountId);
-            var to = this.accountRepository.GetAccountById(toAccountId);
+            var from = repositoryHelper.GetAccountById(fromAccountId);
+            var to = repositoryHelper.GetAccountById(toAccountId);
 
-            bool lowFundsFlag = false;
-            bool highPaidInLimitFlag = false;
+            bool lowFundsFlag = false, highPaidInLimitFlag = false;
 
             from.CheckFunds(amount);
 
@@ -44,10 +43,10 @@ namespace Moneybox.App.Features
                 highPaidInLimitFlag = true;
             }
 
-            //Here I have reordered the logic to ensure the account repository is update successfully before notify the user of low funds.
+            //Here I have reordered the logic to ensure the account repository is update successfully before notifying the user of low funds.
             if(from.Transfer(to, amount))
             {
-                Update(from, to);
+                repositoryHelper.Update(from, to);
 
                 if (lowFundsFlag)
                 {
@@ -60,15 +59,6 @@ namespace Moneybox.App.Features
                 }
             }
 
-            this.accountRepository.Update(from);
-            this.accountRepository.Update(to);
-        }
-
-        // Assuming that accountRepository service will implement safety checks for updating
-        private void Update(Account from,Account to)
-        {
-            this.accountRepository.Update(from);
-            this.accountRepository.Update(to);
         }
     }
 }

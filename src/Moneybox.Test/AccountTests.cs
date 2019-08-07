@@ -12,7 +12,7 @@ namespace Moneybox.Test
         {
             //Arrange
             Account account = new Account(999m);
-            decimal overlimit = account.Balance + 1m; ;
+            decimal overlimit = account.Balance + 1m; 
 
 
             //Assert
