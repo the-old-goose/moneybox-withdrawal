@@ -19,6 +19,17 @@ namespace Moneybox.App
 
         public decimal PaidIn { get; private set; }
 
+        //empty contructor set initial balance to 0
+        public Account()
+        {
+            this.Balance = 0m;
+        }
+
+        //Set to predefined initial balance
+        public Account(Decimal initialBalance)
+        {
+            this.Balance = initialBalance;
+        }
         public void CheckFunds(decimal amount)
         {
             if ((this.Balance - amount) < 0m)
